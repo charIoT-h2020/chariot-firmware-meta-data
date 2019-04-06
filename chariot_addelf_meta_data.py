@@ -209,6 +209,20 @@ def extract_info(output_file, section):
         print command
     return (partition[1], partition[2])
 
+def extract_sub_info(output_file, section):
+    fd_content_s, content_s_path = tempfile.mkstemp()
+    try:
+        returncode = os.system('objcopy --dump-section .%s=%s %s' % (section, content_s_path, output_file))
+        if args.verbose or returncode:
+            command = "objcopy --dump-section ." + section + "=" + content_s_path + " " + output_file
+            if returncode:
+                print "[error] the command " + command + " has failed with return code " + str(returncode)
+                raise OSError(returncode)
+            print command
+        return extract_info(content_s_path, section)
+    finally:
+        close_fd_and_file(fd_content_s, content_s_path)
+
 def has_section(output_file, section):
     size_proc = subprocess.Popen(['size', '-A', output_file], stdout=subprocess.PIPE)
     result = False
@@ -291,7 +305,7 @@ except OSError as err:
 print "compile metadata assembly file into an elf object file"
 fd_metadata_o, metadata_o_path = tempfile.mkstemp()
 # could use as instead of gcc: as --32
-gcc_option = "" # -m32
+gcc_option = "-m32" # -m32
 # as_option = "" # --32
 returncode = os.system('gcc -ffreestanding %s -c -O %s -Wall -o %s' % (gcc_option, metadata_s_path, metadata_o_path))
 # os.system('as %s %s -o %s' % (as_option, metadata_s_path, metadata_o_path))
@@ -375,7 +389,7 @@ try:
     (mainboot_size, mainboot_offset) = extract_info(output_file, mainboot)
     (additional_size, additional_offset) = (0, 0)
     if additional_data_file is not None:
-        additional_size, additional_offset = extract_info(output_file, "suppldata")
+        additional_size, additional_offset = extract_sub_info(output_file, "suppldata")
     assembly_file_without_data = open(metadata_s_path, 'w')
     generate_metadata_as_assembly(assembly_file_without_data, args.exe_name, mainboot,
             additional_data_file, additional_data_mime,
