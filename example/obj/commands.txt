@@ -1,0 +1,9 @@
+gcc -ffreestanding -m32 -O -Wall -c ../boot.s -o boot.o
+gcc -ffreestanding -m32 -O -Wall -c ../hello-chariot.c -o hello-chariot.o
+gcc -ffreestanding -m32 -O -Wall -c ../kernel.c -o kernel.o
+gcc -ffreestanding -m32 -O -Wall -static -T linker.ld -nostdlib boot.o hello-chariot.o kernel.o -lgcc -o hello-world-plain-kernel
+
+../../chariot_addelf_meta_data.py -v --boot text --add ../Flag-of-Europe-64x64.png image/png --blockchain_path "http://" --license "GPl" --static-analysis commands.txt plain/txt  hello-world-plain-kernel -o hello-world-plain-kernel2
+../../chariot_extractelf_meta_data.py -v -a hello-world-plain-kernel2
+../../chariot_extractelf_meta_data.exe -v -a hello-world-plain-kernel2
+
