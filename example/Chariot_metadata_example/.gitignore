@@ -1,0 +1,10 @@
+*.o
+hello-world-*-kernel
+README.html
+*~
+_chariot-*-metadata.*
+_supplementary-data.c
+chariot-metadata.c
+chariot-metadata.s
+supplementary-data.c
+
