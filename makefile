@@ -2,7 +2,7 @@ lib: libchariot_extractelf.a
 
 all: lib exe
 
-CFLAGS=-O2
+CFLAGS=-O2 -Wall
 # CFLAGS=-g -O0
 
 libchariot_extractelf.a : chariot_extractelf.o

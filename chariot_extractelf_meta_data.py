@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import argparse
@@ -25,20 +25,20 @@ def extract_section(exe_name, section_name, out_filename, verbose):
     if args.verbose or returncode:
         command = "objcopy --dump-section ." + section_name + '=' + out_filename + " " + exe_name
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             raise OSError(returncode)
-        print command
+        print (command)
 
 def query_start_size(metadata_filename, verbose):
     readelf_proc = subprocess.Popen(['readelf', '-s', metadata_filename], stdout=subprocess.PIPE)
     result = {}
     while True:
         line = readelf_proc.stdout.readline()
-        if line == '':
+        if not line:
             break
         partition = line.split()
-        if (len(partition) >= 8 and partition[0][0] >= '0' and partition[0][0] <= '9'
-                and partition[0][len(partition[0])-1] == ':'):
+        if (len(partition) >= 8 and partition[0][0] >= ord('0') and partition[0][0] <= ord('9')
+                and partition[0][len(partition[0])-1] == ord(':')):
             try:
                 key = partition[7]
                 if len(key) >= 25:
@@ -50,9 +50,9 @@ def query_start_size(metadata_filename, verbose):
     if verbose or returncode:
         command = "readelf -s " + metadata_filename
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             raise OSError(returncode)
-        print command
+        print (command)
     return result
 
 def print_meta_data_result(condition, field, metadata_file, start_size_dict, output_file):
@@ -60,31 +60,38 @@ def print_meta_data_result(condition, field, metadata_file, start_size_dict, out
         key = field
         if len(key) >= 25:
             key = key[0:25]
-        (start, size) = start_size_dict[key]
-        if size > 0:
-            metadata_file.seek(start+elf_offset_section)
-            if output_file is not None:
-                output_file.write(metadata_file.read(size))
+        try:
+            (start, size) = start_size_dict[key]
+            if size > 0:
+                metadata_file.seek(start+elf_offset_section)
+                if output_file is not None:
+                    output_file.write(metadata_file.read(size))
+                else:
+                    print(str(metadata_file.read(size), "utf-8"))
             else:
-                print(metadata_file.read(size))
-        else:
-            print >> sys.stderr, "no output for metadata %s", key
+                print("no output for metadata ", key, file=sys.stderr)
+        except:
+            print("no output for metadata ", key, file=sys.stderr)
 
 def get_meta_data_result(field, metadata_file, start_size_dict):
     key = field
     if len(key) >= 25:
         key = key[0:25]
-    (start, size) = start_size_dict[key]
-    result = 0
-    if size > 0:
-        metadata_file.seek(start+elf_offset_section)
-        content = metadata_file.read(size)
-        if size != 8:
-            print "[error] corrupted int for " + field + " in metadata section of exe file"
+    try:
+        (start, size) = start_size_dict[key]
+        result = 0
+        if size > 0:
+            metadata_file.seek(start+elf_offset_section)
+            content = metadata_file.read(size)
+            if size != 8:
+                print ("[error] corrupted int for " + field + " in metadata section of exe file")
+                raise OSError(0)
+            result = int(content, 16)
+        else:
+            print ("no output for metadata ", key, file=sys.stderr)
             raise OSError(0)
-        result = int(content, 16)
-    else:
-        print >> sys.stderr, "no output for metadata %s", key
+    except:
+        print ("no output for metadata ", key, file=sys.stderr)
         raise OSError(0)
     return result
 
@@ -137,16 +144,16 @@ except OSError as err:
     sys.exit(err.errno)
 
 metadata_file = open(metadata_filename, 'rb')
-print_meta_data_result(args.sha or args.all, "chariotmeta_mainboot_sha256", metadata_file, start_size_dict, output_file)
-print_meta_data_result(args.blockchain_path or args.all, "chariotmeta_firmware_path", metadata_file, start_size_dict, output_file)
-print_meta_data_result(args.license or args.all, "chariotmeta_firmware_license", metadata_file, start_size_dict, output_file)
-print_meta_data_result(args.static_analysis or args.all, "chariotmeta_codanalys_data", metadata_file, start_size_dict, output_file)
+print_meta_data_result(args.sha or args.all, b"chariotmeta_mainboot_sha256", metadata_file, start_size_dict, output_file)
+print_meta_data_result(args.blockchain_path or args.all, b"chariotmeta_firmware_path", metadata_file, start_size_dict, output_file)
+print_meta_data_result(args.license or args.all, b"chariotmeta_firmware_license", metadata_file, start_size_dict, output_file)
+print_meta_data_result(args.static_analysis or args.all, b"chariotmeta_codanalys_data", metadata_file, start_size_dict, output_file)
 if args.add or args.all:
     fd_additions, additions_filename = tempfile.mkstemp()
     try:
         extract_section(args.exe_name, "suppldata", additions_filename, args.verbose)
-        start = get_meta_data_result("chariotmeta_extraboot_offsetnum", metadata_file, start_size_dict)
-        size = get_meta_data_result("chariotmeta_extraboot_sizenum", metadata_file, start_size_dict)
+        start = get_meta_data_result(b"chariotmeta_extraboot_offsetnum", metadata_file, start_size_dict)
+        size = get_meta_data_result(b"chariotmeta_extraboot_sizenum", metadata_file, start_size_dict)
         additions_file = open(additions_filename, 'rb')
         print_additional_result(additions_file, start, size)
         additions_file.close()
