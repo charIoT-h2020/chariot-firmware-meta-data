@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import argparse
@@ -26,9 +26,9 @@ def compute_sha_256(in_file_name, verbose):
     if verbose or returncode:
         command = "sha256sum " + in_file_name
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             raise OSError(returncode)
-        print command
+        print (command)
     return sha_result
 
 def compute_sha_256_content(elf_name, mainboot, verbose):
@@ -38,9 +38,9 @@ def compute_sha_256_content(elf_name, mainboot, verbose):
         if args.verbose or returncode:
             command = "objcopy --dump-section ." + mainboot + "=" + content_s_path + " " + elf_name
             if returncode:
-                print "[error] the command " + command + " has failed with return code " + str(returncode)
+                print ("[error] the command " + command + " has failed with return code " + str(returncode))
                 raise OSError(returncode)
-            print command
+            print (command)
         sha_result = compute_sha_256(content_s_path, verbose);
     finally:
         close_fd_and_file(fd_content_s, content_s_path)
@@ -55,10 +55,10 @@ def compute_git_version(in_file_name, verbose):
     if verbose or returncode:
         command = "git log --format=oneline --abbrev=12 --abbrev-commit -q " + in_file_name + ""
         if returncode:
-            print "[warning] the command " + command + " has failed with return code " + str(returncode)
+            print ("[warning] the command " + command + " has failed with return code " + str(returncode))
             git_version_result = "0000000000000000000000000000000000000000000000000000000000000000"
         else:
-            print command
+            print (command)
     return git_version_result
 
 def generate_metadata_as_assembly(out_as_file, elf_file_name, mainboot,
@@ -182,9 +182,9 @@ def generate_additional_as_c_file(c_file_with_additional, additional_data_file, 
     if verbose or returncode:
         command = "hexdump -v -e '/1 \" %#x,\"' " + additional_data_file
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             raise OSError(returncode)
-        print command
+        print (command)
     c_file_with_additional.write(hex_result)
     c_file_with_additional.write("};\n")
 
@@ -202,11 +202,11 @@ def extract_info(output_file, section):
     if args.verbose or returncode or partition is None or len(partition) < 3:
         command = "size -A -d " + output_file
         if returncode or partition is None:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             if partition is None:
-                print "section ." + section + " not found"
+                print ("section ." + section + " not found")
             raise OSError(returncode)
-        print command
+        print (command)
     return (partition[1], partition[2])
 
 def extract_sub_info(output_file, section):
@@ -216,9 +216,9 @@ def extract_sub_info(output_file, section):
         if args.verbose or returncode:
             command = "objcopy --dump-section ." + section + "=" + content_s_path + " " + output_file
             if returncode:
-                print "[error] the command " + command + " has failed with return code " + str(returncode)
+                print ("[error] the command " + command + " has failed with return code " + str(returncode))
                 raise OSError(returncode)
-            print command
+            print (command)
         return extract_info(content_s_path, section)
     finally:
         close_fd_and_file(fd_content_s, content_s_path)
@@ -236,9 +236,9 @@ def has_section(output_file, section):
     if args.verbose or returncode:
         command = "size -A " + output_file
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             raise OSError(returncode)
-        print command
+        print (command)
     return result
 
 parser = argparse.ArgumentParser(description='Add Chariot meta-data into an elf firmware')
@@ -288,7 +288,7 @@ else:
 
 mainboot = args.boot[0]
 
-print "generate section containing metadata as an assembly file"
+print ("generate section containing metadata as an assembly file")
 fd_metadata_s, metadata_s_path = tempfile.mkstemp(suffix=".s")
 try:
     assembly_file_without_data = open(metadata_s_path, 'w')
@@ -302,7 +302,7 @@ except OSError as err:
     os.remove(metadata_s_path)
     sys.exit(err.errno)
 
-print "compile metadata assembly file into an elf object file"
+print ("compile metadata assembly file into an elf object file")
 fd_metadata_o, metadata_o_path = tempfile.mkstemp()
 # could use as instead of gcc: as --32
 gcc_option = "-m32" # -m32
@@ -312,11 +312,11 @@ returncode = os.system('gcc -ffreestanding %s -c -O %s -Wall -o %s' % (gcc_optio
 if args.verbose or returncode:
     command = "gcc -ffreestanding " + gcc_option + " -c -O " + metadata_s_path + " -Wall -o " + metadata_o_path + " \""
     if returncode:
-        print "[error] the command " + command + " has failed with return code " + str(returncode)
+        print ("[error] the command " + command + " has failed with return code " + str(returncode))
         close_fd_and_file(fd_metadata_s, metadata_s_path)
         os.close(fd_metadata_o)
         sys.exit(returncode)
-    print command
+    print (command)
 
 if args.output is not None:
     output_file = args.output[0]
@@ -324,7 +324,7 @@ else:
     fd_output, output_file = tempfile.mkstemp()
 
 if additional_data_file is not None:
-    print "compile extra-data file into an elf object file"
+    print ("compile extra-data file into an elf object file")
     fd_additional_c, additional_c_path = tempfile.mkstemp(suffix = ".c")
     c_file_with_additional = open(additional_c_path, 'w')
     try:
@@ -341,16 +341,16 @@ if additional_data_file is not None:
     if args.verbose or returncode:
         command = "gcc -ffreestanding " + gcc_option + " -O -c " + additional_c_path + " -Wall -o " + additional_o_path + " \""
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             close_fd_and_file(fd_metadata_s, metadata_s_path, fd_additional_c, additional_c_path,
                     fd_additional_o, additional_o_path, fd_metadata_o, metadata_o_path)
             if args.output is None:
                 os.close(fd_output)
             sys.exit(returncode)
-        print command
+        print (command)
     close_fd_and_file(fd_additional_c, additional_c_path)
 
-    print "add meta-data and extra-data into the elf executable file"
+    print ("add meta-data and extra-data into the elf executable file")
     fstAction = "add-section" if not has_section(args.exe_name, "chariotmeta.rodata") else "update-section"
     sndAction = "add-section" if not has_section(args.exe_name, "suppldata") else "update-section"
     returncode = os.system("objcopy --%s .chariotmeta.rodata=%s "
@@ -361,15 +361,15 @@ if additional_data_file is not None:
     if args.verbose or returncode:
         command = "objcopy --" + fstAction + " .chariotmeta.rodata=" + metadata_o_path + " --" + sndAction + " .suppldata=" + additional_o_path + " --set-section-flags .chariotmeta.rodata=noload,readonly --set-section-flags .suppldata=noload,readonly " + args.exe_name + " " + output_file
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             close_fd_and_file(fd_metadata_s, metadata_s_path, fd_additional_o, additional_o_path,
                     fd_metadata_o, metadata_o_path)
             if args.output is None:
                 os.close(fd_output)
             sys.exit(returncode)
-        print command
+        print (command)
 else:
-    print "add meta-data into the elf executable file"
+    print ("add meta-data into the elf executable file")
     action = "add-section" if not has_section(args.exe_name, "chariotmeta.rodata") else "update-section" 
     returncode = os.system("objcopy --%s .chariotmeta.rodata=%s "
             "--set-section-flags .chariotmeta.rodata=noload,readonly "
@@ -377,14 +377,14 @@ else:
     if args.verbose or returncode:
         command = "objcopy --" + action + " .chariotmeta.rodata=" + metadata_o_path + " --set-section-flags .chariotmeta.rodata=noload,readonly " + args.exe_name + " " + output_file
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             close_fd_and_file(fd_metadata_s, metadata_s_path, fd_metadata_o, metadata_o_path)
             if args.output is None:
                 os.close(fd_output)
             sys.exit(returncode)
-        print command
+        print (command)
 
-print "update meta-data assembly file"
+print ("update meta-data assembly file")
 try:
     (mainboot_size, mainboot_offset) = extract_info(output_file, mainboot)
     (additional_size, additional_offset) = (0, 0)
@@ -397,21 +397,21 @@ try:
             blockchain_path, license, args.verbose, mainboot_size, mainboot_offset,
             additional_size, additional_offset)
     assembly_file_without_data.close()
-    print "recompile metadata assembly file after update"
+    print ("recompile metadata assembly file after update")
     returncode = os.system('gcc -ffreestanding %s -c -O %s -Wall -o %s' % (gcc_option, metadata_s_path, metadata_o_path))
     if args.verbose or returncode:
         command = "gcc -ffreestanding " + gcc_option + " -c -O " + metadata_s_path + " -Wall -o " + metadata_o_path + " \""
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             close_fd_and_file(fd_metadata_s, metadata_s_path, fd_metadata_o, metadata_o_path)
             if additional_data_file is not None:
                 close_fd_and_file(fd_additional_o, additional_o_path)
             if args.output is None:
                 close_fd_and_file(fd_output, output_file)
             sys.exit(returncode)
-        print command
+        print (command)
     if additional_data_file is not None:
-        print "add again meta-data and extra-data into the elf executable file"
+        print ("add again meta-data and extra-data into the elf executable file")
         fstAction = "add-section" if not has_section(args.exe_name, "chariotmeta.rodata") else "update-section"
         sndAction = "add-section" if not has_section(args.exe_name, "suppldata") else "update-section"
         returncode = os.system("objcopy --%s .chariotmeta.rodata=%s "
@@ -422,16 +422,16 @@ try:
         if args.verbose or returncode:
             command = "objcopy --" + fstAction + " .chariotmeta.rodata=" + metadata_o_path + " --" + sndAction + " .suppldata=" + additional_o_path + " --set-section-flags .chariotmeta.rodata=noload,readonly --set-section-flags .suppldata=noload,readonly " + args.exe_name + " " + output_file
             if returncode:
-                print "[error] the command " + command + " has failed with return code " + str(returncode)
+                print ("[error] the command " + command + " has failed with return code " + str(returncode))
                 close_fd_and_file(fd_metadata_s, metadata_s_path,
                         fd_additional_o, additional_o_path, fd_metadata_o, metadata_o_path)
                 if args.output is None:
                     close_fd_and_file(fd_output, output_file)
                 sys.exit(returncode)
-            print command
+            print (command)
         close_fd_and_file(fd_additional_o, additional_o_path)
     else:
-        print "add again meta-data into the elf executable file"
+        print ("add again meta-data into the elf executable file")
         action = "add-section" if not has_section(args.exe_name, "chariotmeta.rodata") else "update-section"
         returncode = os.system("objcopy --%s .chariotmeta.rodata=%s "
                 "--set-section-flags .chariotmeta.rodata=noload,readonly "
@@ -439,12 +439,12 @@ try:
         if args.verbose or returncode:
             command = "objcopy --" + action + " .chariotmeta.rodata=" + metadata_o_path + " --set-section-flags .chariotmeta.rodata=noload,readonly " + args.exe_name + " " + output_file
             if returncode:
-                print "[error] the command " + command + " has failed with return code " + str(returncode)
+                print ("[error] the command " + command + " has failed with return code " + str(returncode))
                 close_fd_and_file(fd_metadata_s, metadata_s_path, fd_metadata_o, metadata_o_path)
                 if args.output is None:
                     close_fd_and_file(fd_output, output_file)
                 sys.exit(returncode)
-            print command
+            print (command)
 
 except OSError as err:
     close_fd_and_file(fd_metadata_s, metadata_s_path, fd_metadata_o, metadata_o_path)
@@ -460,9 +460,9 @@ if args.output is None:
     if args.verbose or returncode:
         command = "mv " + output_file + " " + args.exe_name
         if returncode:
-            print "[error] the command " + command + " has failed with return code " + str(returncode)
+            print ("[error] the command " + command + " has failed with return code " + str(returncode))
             close_fd_and_file(fd_output, output_file)
             sys.exit(returncode)
-        print command
+        print (command)
     close_fd_and_file(fd_output, output_file)
 
