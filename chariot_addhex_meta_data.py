@@ -49,7 +49,7 @@ def compute_git_version(in_file_name, verbose):
 
 parser = argparse.ArgumentParser(description='Add Chariot meta-data into an hex firmware')
 parser.add_argument('hex_name', help='the name of the executable hex file')
-parser.add_argument('--all', '-all', nargs=2,
+parser.add_argument('--all', '-all', nargs=1,
                    help='meta-data file')
 parser.add_argument('--add', '-add', nargs=2,
                    help='additional file/mime to encode in the Chariot supplementary section')
@@ -110,7 +110,7 @@ try:
         if args.all is not None:
             if args.verbose:
                 print ("copy meta-data file " + args.all) 
-            with open(args.all,'rb') as meta_file:
+            with open(args.all[0],'rb') as meta_file:
                 while True:
                     buf=meta_file.read(4096)
                     if buf: 
