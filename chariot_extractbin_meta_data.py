@@ -46,14 +46,12 @@ try:
             if output_file is None:
                 print ("extraction of all meta-data requires an output file")
                 raise OSError(1)
-            with open(output_file, 'wb') as metadata_file:
-                while True:
-                    buf = hexm_file.read(4096)
-                    if buf: 
-                        metadata_file.write(buf)
-                    else:
-                        break
-            metadata_file.close()
+            while True:
+                buf = hexm_file.read(4096)
+                if buf: 
+                    output_file.write(buf)
+                else:
+                    break
         else:
             if args.verbose:
                 print ("extract meta-data section") 
@@ -212,7 +210,10 @@ try:
                     raise OSError(1)
                 static_analysis_mime_size = int.from_bytes(hexm_file.read(4), byteorder='big')
                 static_analysis_mime_string = hexm_file.read(static_analysis_mime_size)
-
 except OSError as err:
+    if output_file is not None:
+        output_file.close()
     sys.exit(err.errno)
 
+if output_file is not None:
+    output_file.close()
