@@ -96,7 +96,7 @@ try:
                 print ("original file " + args.exe_name + " has not expected hybrid format")
                 raise OSError(1)
                 
-            if (args.add is not None) and (next_header != "add"):
+            if args.add and (next_header != "add"):
                 if output_file is None:
                     print("")
             elif next_header == "add":
@@ -141,7 +141,7 @@ try:
                 print ("original file " + args.exe_name + " has not expected hybrid format")
                 raise OSError(1)
 
-            if (args.blockchain_path is not None) and (next_header != "bcpath"):
+            if args.blockchain_path and (next_header != "bcpath"):
                 if output_file is None:
                     print("")
             elif next_header == "bcpath":
@@ -166,7 +166,7 @@ try:
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
 
-            if (args.license is not None) and (next_header != "lic"):
+            if args.license and (next_header != "lic"):
                 if output_file is None:
                     print("")
             elif next_header == "lic":
@@ -191,7 +191,7 @@ try:
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
 
-            if (args.static_analysis is not None) and (next_header != "sca"):
+            if args.static_analysis and (next_header != "sca"):
                 if output_file is None:
                     print("")
             elif next_header == "sca":

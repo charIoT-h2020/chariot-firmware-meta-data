@@ -225,6 +225,8 @@ try:
 
             if args.verbose:
                 print ("add additional size info")
+            hexm_file.write("::".encode())
+            add_size += 2
             add_size += 4
             hexm_file.write(
                (add_size).to_bytes(4, byteorder='big', signed=False))
