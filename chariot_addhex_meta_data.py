@@ -12,7 +12,7 @@ def convert_hex_line(content : bytes, add_line : int):
     length = len(content)
     line = 0
     while length > 0xff:
-        checksum = 0
+        checksum = 0xff
         result = ":FF000000"
         subline = content[line*0xff:line*0xff+0xff]
         result += binascii.hexlify(subline).decode("ascii")
@@ -22,22 +22,22 @@ def convert_hex_line(content : bytes, add_line : int):
         result += binascii.hexlify(checksum & 0xff).decode("ascii")
         result += "\n"
         length -= 0x100
-        ++line
-    checksum = 0
+        line = line+1
+    checksum = length
     result = ":" + binascii.hexlify(bytes([length])).decode("ascii")+ "000000"
     if line > 0:
         subline = content[line*0xff:line*0xff+length]
         result += binascii.hexlify(subline).decode("ascii")
         for ch in subline:
-            checksum += ch
+            checksum = checksum + ch
     else:
         result += binascii.hexlify(content).decode("ascii")
         for ch in content:
-            checksum += ch
+            checksum = checksum + ch
     checksum = -checksum
     result += binascii.hexlify(bytes([checksum & 0xff])).decode("ascii")
     result += "\n"
-    return result, line+1
+    return result, add_line+line+1
 
 def compute_sha_256(in_file_name, verbose):
     sha_256_proc = subprocess.Popen(['sha256sum', in_file_name], stdout=subprocess.PIPE)
@@ -126,7 +126,7 @@ try:
                 break
             if line == ":00000001FF\n" or line == ":00000001FF":
                 break
-            ++total_line
+            total_line = total_line+1
             hexm_file.write(line)
         hex_file.close();
 
@@ -142,10 +142,10 @@ try:
                     if line == ":00000001FF\n" or line == ":00000001FF":
                         break
                     hexm_file.write(line)
-                    ++add_line
+                    add_line = add_line+1
                 res, add_line = hexm_file.write(convert_hex_line(
                     str(add_line+2).encode()), add_line)
-                ++add_line
+                add_line = add_line+1
                 hexm_file.write(":00000001FF\n")
                 meta_file.close();
         else:
@@ -246,7 +246,8 @@ try:
             if args.verbose:
                 print ("add additional size info")
             res, add_line = convert_hex_line("::".encode() +
-               (add_line+2).to_bytes(4, byteorder='big', signed=False), add_line)
+               (total_line).to_bytes(4, byteorder='big', signed=False) +
+               (add_line+1).to_bytes(4, byteorder='big', signed=False), add_line)
             hexm_file.write(res)
             hexm_file.write(":00000001FF")
 
