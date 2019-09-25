@@ -19,6 +19,7 @@ def locate_line_from_end(hexm_file, file_size):
         while i > 0:
             i = i-1
             if buf[i] == '\n' or first:
+                first = False
                 if buf[i] == '\n':
                     j = i
                 else:
@@ -152,6 +153,7 @@ try:
                 if line == '':
                     break
                 if line == ":00000001FF\n" or line == ":00000001FF":
+                    output_file.write(line)
                     break
                 output_file.write(line)
 

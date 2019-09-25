@@ -11,12 +11,16 @@ libchariot_extractelf.a : chariot_extractelf.o
 chariot_extractelf.o: chariot_extractelf.c chariot_extractelf.h elf32.h
 	gcc $(CFLAGS) -c $< -o $@
 
-exe: chariot_extractelf_meta_data.exe chariot_extractbin_meta_data.exe
+exe: chariot_extractelf_meta_data.exe chariot_extractbin_meta_data.exe \
+	  chariot_extracthex_meta_data.exe
 
 chariot_extractelf_meta_data.exe: chariot_extractelf_meta_data.c libchariot_extractelf.a
 	gcc $(CFLAGS) $< -o $@ -L. -lchariot_extractelf
 
 chariot_extractbin_meta_data.exe: chariot_extractbin_meta_data.c
+	gcc $(CFLAGS) $< -o $@
+
+chariot_extracthex_meta_data.exe: chariot_extracthex_meta_data.c
 	gcc $(CFLAGS) $< -o $@
 
 # chariot_extractelf_meta_data.exe: chariot_extractelf_meta_data.cpp libchariot_extractelf.a
