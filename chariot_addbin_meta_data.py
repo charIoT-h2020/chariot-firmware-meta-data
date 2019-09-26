@@ -59,6 +59,8 @@ parser.add_argument('--blockchain_path', '-bp', nargs=1,
                    help='the targeted blockchain identification')
 parser.add_argument('--license', '-lic', nargs=1,
                    help='the license of the firmware in the Chariot format')
+parser.add_argument('--software_ID', '-soft', nargs=1,
+                   help='the software_id of the firmware in the Chariot format')
 parser.add_argument('--static-analysis', '-sa', nargs=2,
                    help='result of the static analysis as file/format')
 parser.add_argument('--output', '-o', nargs=1, required=True,
@@ -89,6 +91,11 @@ if args.license is not None:
     license = args.license[0]
 else:
     license = None
+
+if args.software_ID is not None:
+    soft_id = args.software_ID[0]
+else:
+    soft_id = None
 
 output_file = args.output[0]
 
@@ -196,6 +203,18 @@ try:
                 add_size += 4
                 hexm_file.write(license.encode())
                 add_size += len(license)
+
+            if soft_id is not None:
+                if args.verbose:
+                    print ("add software id")
+                hexm_file.write(":soft:".encode())
+                add_size += len(":soft:")
+                hexm_file.write(
+                    (len(soft_id))
+                        .to_bytes(4, byteorder='big', signed=False))
+                add_size += 4
+                hexm_file.write(soft_id.encode())
+                add_size += len(soft_id)
 
             if static_code_analysis_file is not None:
                 if args.verbose:

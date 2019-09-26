@@ -11,20 +11,21 @@ import binascii
 def convert_hex_line(content : bytes, add_line : int):
     length = len(content)
     line = 0
+    result = ""
     while length > 0xff:
         checksum = 0xff
-        result = ":FF000000"
+        result += ":FF000000"
         subline = content[line*0xff:line*0xff+0xff]
         result += binascii.hexlify(subline).decode("ascii")
         for ch in subline:
             checksum += ch
         checksum = -checksum
-        result += binascii.hexlify(checksum & 0xff).decode("ascii")
+        result += binascii.hexlify(bytes([checksum & 0xff])).decode("ascii")
         result += "\n"
-        length -= 0x100
+        length -= 0xff
         line = line+1
     checksum = length
-    result = ":" + binascii.hexlify(bytes([length])).decode("ascii")+ "000000"
+    result += ":" + binascii.hexlify(bytes([length])).decode("ascii")+ "000000"
     if line > 0:
         subline = content[line*0xff:line*0xff+length]
         result += binascii.hexlify(subline).decode("ascii")
