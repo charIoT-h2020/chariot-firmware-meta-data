@@ -58,9 +58,9 @@ parser.add_argument('--verbose', '-v', action='store_true',
 parser.add_argument('--blockchain_path', '-bp', nargs=1,
                    help='the targeted blockchain identification')
 parser.add_argument('--license', '-lic', nargs=1,
-                   help='the license of the firmware in the Chariot format')
+                   help='the license of the firmware')
 parser.add_argument('--software_ID', '-soft', nargs=1,
-                   help='the software_id of the firmware in the Chariot format')
+                   help='the software_id of the firmware')
 parser.add_argument('--static-analysis', '-sa', nargs=2,
                    help='result of the static analysis as file/format')
 parser.add_argument('--output', '-o', nargs=1, required=True,
