@@ -451,7 +451,7 @@ extract_sha(FILE* hexm_file, FILE* out_file, char buffer[512], InputParser* pars
   }
   else {
     char ch;
-    while ((ch = fgetc(hexm_file) != EOF) && ch != '\n') {}
+    while (((ch = fgetc(hexm_file)) != EOF) && ch != '\n') {}
   }
   return 0;
 }
@@ -467,12 +467,11 @@ extract_format(FILE* hexm_file, FILE* out_file, char buffer[512], InputParser* p
   if ((error_code = convert_hex_line(hexm_file, out_file, &bytes_number,
       buffer, &does_start_line, &len, &checksum, parser)) != 0)
     return standard_error(out_file, hexm_file, parser);
-  buffer[len] = '\0';
   if (strncmp(buffer, ":fmt:", strlen(":fmt:")) != 0)
     return standard_error(out_file, hexm_file, parser);
   u_int32_t fmt_size = 0;
-  if ((error_code = retrieve_size_number(&buffer[strlen(":fmt:")], &fmt_size)) != 0)
-    return standard_error(out_file, hexm_file, parser);
+  memcpy(&fmt_size, &buffer[strlen(":fmt:")], 4);
+  ensure_endianness(&fmt_size);
 
   bytes_number = fmt_size; len = 0; checksum = 0;
   does_start_line = true;
@@ -481,8 +480,10 @@ extract_format(FILE* hexm_file, FILE* out_file, char buffer[512], InputParser* p
     if ((error_code = convert_hex_line(hexm_file, out_file, &bytes_number,
         buffer, &does_start_line, &len, &checksum, parser)) != 0)
       return standard_error(out_file, hexm_file, parser);
-    if (parser->requires_format)
+    if (parser->requires_format) {
       fwrite(buffer, 1, nb_bytes - bytes_number, out_file);
+      fputc('\n', out_file);
+    }
   } while (!does_start_line || bytes_number > 0);
   return 0;
 }
