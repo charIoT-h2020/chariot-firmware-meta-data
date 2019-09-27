@@ -84,6 +84,8 @@ fill_input_parser_fields(InputParser* parser, int argc, const char** argv)
         parser->requires_software_id = true;
       else if (strcmp(argv[i], "-sa") == 0 || strcmp(argv[i], "--static-analysis") == 0)
         parser->requires_static_analysis = true;
+      else if (strcmp(argv[i], "-add") == 0 || strcmp(argv[i], "--add") == 0)
+        parser->requires_additional = true;
       else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0)
       {
         if (++i >= argc)
@@ -216,8 +218,10 @@ extract_format(FILE* hexm_file, FILE* out_file, char buffer[100], InputParser* p
       len = fread(buffer, 1, size, hexm_file);
       if (len != size)
         return standard_error(out_file, hexm_file, parser);
-      if (parser->requires_format)
+      if (parser->requires_format) {
         fwrite(buffer, 1, size, out_file);
+        fputc('\n', out_file);
+      }
       fmt_size -= size;
     } while (fmt_size > 0);
   }
@@ -228,7 +232,7 @@ int
 extract_field_head(FILE* hexm_file, FILE* out_file, char buffer[100],
     int* len_field, InputParser* parser) {
   int ch;
-  if ((ch = fgetc(hexm_file) != ':') && ch != EOF)
+  if ((ch = fgetc(hexm_file)) != ':' && ch != EOF)
     return standard_error(out_file, hexm_file, parser);
   if (ch == EOF) {
     buffer[0] = '\0';
@@ -237,7 +241,7 @@ extract_field_head(FILE* hexm_file, FILE* out_file, char buffer[100],
   }
 
   int index = 0;
-  while ((ch = fgetc(hexm_file) != ':') && ch != EOF && index < 100-1)
+  while ((ch = fgetc(hexm_file)) != ':' && ch != EOF && index < 100-1)
     buffer[index++] = ch;
   if (ch == EOF || index >= 100-1)
     return standard_error(out_file, hexm_file, parser);
@@ -267,6 +271,7 @@ extract_additional_from_field(FILE* hexm_file, FILE* out_file,
           fwrite(buffer, 1, size, out_file);
         additional_size -= size;
       } while (additional_size > 0);
+      fputc('\n', out_file);
     }
     else if (fseek(hexm_file, additional_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
@@ -334,6 +339,7 @@ extract_license_from_field(FILE* hexm_file, FILE* out_file,
           fwrite(buffer, 1, size, out_file);
         license_size -= size;
       } while (license_size > 0);
+      fputc('\n', out_file);
     }
     else if (fseek(hexm_file, license_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
@@ -370,6 +376,7 @@ extract_software_id_from_field(FILE* hexm_file, FILE* out_file,
           fwrite(buffer, 1, size, out_file);
         software_id_size -= size;
       } while (software_id_size > 0);
+      fputc('\n', out_file);
     }
     else if (fseek(hexm_file, software_id_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
@@ -406,6 +413,7 @@ extract_blockchain_path_from_field(FILE* hexm_file, FILE* out_file,
           fwrite(buffer, 1, size, out_file);
         blockchain_size -= size;
       } while (blockchain_size > 0);
+      fputc('\n', out_file);
     }
     else if (fseek(hexm_file, blockchain_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
@@ -442,6 +450,7 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
           fwrite(buffer, 1, size, out_file);
         static_analysis_size -= size;
       } while (static_analysis_size > 0);
+      fputc('\n', out_file);
     }
     else if (fseek(hexm_file, static_analysis_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
@@ -515,16 +524,16 @@ int main(int argc, const char** argv) {
   }
   u_int32_t metadata_size = 0;
   if (fseek(hexm_file, -4, SEEK_END)) {
-    printf("impossible to find metadata, error code = %d", errno);
+    printf("unable to find metadata, error code = %d\n", errno);
     return 1;
   }
   if (fread(&metadata_size, 1, 4, hexm_file) != 4) {
-    printf("impossible to find metadata, error code = %d", errno);
+    printf("unable to find metadata, error code = %d\n", errno);
     return 1;
   }
   ensure_endianness(&metadata_size);
   if (fseek(hexm_file, -(long) metadata_size, SEEK_END)) {
-    printf("impossible to find metadata, error code = %d", errno);
+    printf("unable to find metadata, error code = %d\n", errno);
     return 1;
   }
 
@@ -550,8 +559,6 @@ int main(int argc, const char** argv) {
   if ((return_code = extract_format(hexm_file, out_file, buffer, &parser)) != 0)
     return return_code;
 
-  if (fgetc(hexm_file) != ':')
-    return standard_error(out_file, hexm_file, &parser);
   int len_field=0;
   if ((return_code = extract_field_head(hexm_file, out_file, buffer,
           &len_field, &parser)) != 0)
