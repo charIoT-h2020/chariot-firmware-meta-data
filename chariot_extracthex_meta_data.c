@@ -204,6 +204,7 @@ convert_hex_line(FILE* hexm_file, FILE* out_file, size_t* bytes_number,
   else
     *bytes_number = 0;
 
+  int start = 0;
   while (line > 0) {
     if (*does_start_line) {
       if (fgetc(hexm_file) != ':')
@@ -252,17 +253,17 @@ convert_hex_line(FILE* hexm_file, FILE* out_file, size_t* bytes_number,
         byte |= (ch - 'A' + 10);
       else
         return standard_error(out_file, hexm_file, parser);
-      buffer[i] = byte;
+      buffer[start+i] = byte;
       *checksum += byte;
-      if (len_header && i == 0 && buffer[i] != ':')
+      if (len_header && (start+i == 0) && buffer[start+i] != ':')
         return standard_error(out_file, hexm_file, parser);
       if ((--cur_bytes == 0 && (i+1 < *len))
-            || (len_header && (!*len_header ? (i > 0 && buffer[i] == ':')
+            || (len_header && (!*len_header ? (i > 0 && buffer[start+i] == ':')
                                             : (i > *len_header)))) {
         if (!len_header && *bytes_number == 0)
           return standard_error(out_file, hexm_file, parser);
         if (len_header) {
-           buffer[i+1] = '\0';
+           buffer[start+i+1] = '\0';
            *len_header = i+1;
         }
         *len -= (i+1);
@@ -299,6 +300,7 @@ convert_hex_line(FILE* hexm_file, FILE* out_file, size_t* bytes_number,
       return standard_error(out_file, hexm_file, parser);
     --line;
     *does_start_line = true;
+    start += *len;
   }
   return 0;
 }

@@ -125,7 +125,7 @@ parser.add_argument('--verbose', '-v', action='store_true',
                    help='verbose mode: echo every command on terminal')
 parser.add_argument('--sha', '-sha', action='store_true',
                    help='print the sha256 of the boot section')
-parser.add_argument('--format', action='store_true',
+parser.add_argument('--format', '-format', action='store_true',
                    help='print the chariot format')
 parser.add_argument('--version', '-ver', action='store_true',
                    help='print the version')
@@ -142,11 +142,10 @@ parser.add_argument('--output', '-o', nargs=1,
 args = parser.parse_args()
 
 if args.output is not None:
-    output_file = open(args.output[0],'w')
+    output_file = open(args.output[0],'wb')
 else:
     output_file = None
 
-print ("extract meta-data from hexm file")
 try:
     file_size = os.path.getsize(args.exe_name)
     with open(args.exe_name,'r') as hexm_file:
@@ -180,7 +179,8 @@ try:
                 sha_256 = convert_hex_line(hexm_file, 256//8)
                 result = binascii.hexlify(sha_256).decode("ascii")
                 if output_file is not None:
-                    output_file.write(result)
+                    output_file.write(result.encode())
+                    output_file.write(b'\n')
                 else:
                     print(result)
             else:
@@ -197,6 +197,7 @@ try:
             if args.format:
                 if output_file is not None:
                     output_file.write(format_string)
+                    output_file.write(b'\n')
                 else:
                     print(str(format_string.decode()))
 
@@ -225,7 +226,8 @@ try:
                 additional_string = convert_hex_line(hexm_file, additional_size)
                 if args.add:
                     if output_file is not None:
-                        output_file.write(str(additional_string))
+                        output_file.write(additional_string)
+                        output_file.write(b'\n')
                     else:
                         print(additional_string)
 
@@ -247,6 +249,7 @@ try:
                 result = binascii.hexlify(version_string).decode("ascii")
                 if output_file is not None:
                     output_file.write(version_string)
+                    output_file.write(b'\n')
                 else:
                     print(result)
 
@@ -276,7 +279,8 @@ try:
 
                 if args.blockchain_path:
                     if output_file is not None:
-                        output_file.write(blockchain_string.decode())
+                        output_file.write(blockchain_string)
+                        output_file.write(b'\n')
                     else:
                         print(str(blockchain_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
@@ -305,7 +309,8 @@ try:
 
                 if args.license:
                     if output_file is not None:
-                        output_file.write(license_string.decode())
+                        output_file.write(license_string)
+                        output_file.write(b'\n')
                     else:
                         print(str(license_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
@@ -334,7 +339,8 @@ try:
 
                 if args.static_analysis:
                     if output_file is not None:
-                        output_file.write(static_analysis_string.decode())
+                        output_file.write(static_analysis_string)
+                        output_file.write(b'\n')
                     else:
                         print(str(static_analysis_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
