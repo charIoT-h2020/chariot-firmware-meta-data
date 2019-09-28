@@ -133,6 +133,8 @@ parser.add_argument('--blockchain_path', '-bp', action='store_true',
                    help='print the path to the targeted blockchain')
 parser.add_argument('--license', '-lic', action='store_true',
                    help='print the license of the firmware')
+parser.add_argument('--software_ID', '-soft', action='store_true',
+                   help='print the software_id of the firmware')
 parser.add_argument('--static-analysis', '-sa', action='store_true',
                    help='print the result of the static analysis as file/format')
 parser.add_argument('--add', '-add', action='store_true',
@@ -313,6 +315,36 @@ try:
                         output_file.write(b'\n')
                     else:
                         print(str(license_string.decode()))
+                line_convert = convert_hex_line(hexm_file, -1)
+                if chr(line_convert[0]) != ':':
+                    print ("original file " + args.exe_name + " has not expected hybrid format")
+                    raise OSError(1)
+                next_header = ""
+                index_ch = 1
+                size_line_convert = len(line_convert)
+                while index_ch < size_line_convert and chr(line_convert[index_ch]) != ':':
+                    next_header += chr(line_convert[index_ch])
+                    index_ch = index_ch + 1
+                if index_ch >= size_line_convert:
+                    print ("original file " + args.exe_name + " has not expected hybrid format")
+                    raise OSError(1)
+
+            if args.software_ID and (next_header != "soft"):
+                if output_file is None:
+                    print("")
+            elif next_header == "soft":
+                if args.verbose and args.software_id is not None:
+                    print ("extract chariot blockchain path")
+                software_id_size = int.from_bytes(
+                    line_convert[index_ch+1:index_ch+5], byteorder='big')
+                software_id_string = convert_hex_line(hexm_file, software_id_size)
+
+                if args.software_ID:
+                    if output_file is not None:
+                        output_file.write(software_id_string)
+                        output_file.write(b'\n')
+                    else:
+                        print(str(software_id_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
                 if chr(line_convert[0]) != ':':
                     print ("original file " + args.exe_name + " has not expected hybrid format")
