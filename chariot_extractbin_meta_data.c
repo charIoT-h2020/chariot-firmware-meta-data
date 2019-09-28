@@ -52,6 +52,7 @@ input_parser_usage()
          "                                       [--blockchain_path] [--license]\n"
          "                                       [--software_ID] [--static-analysis]\n"
          "                                       [--add] [--output OUTPUT]\n"
+         "                                       [--cut OUTPUT_BIN]\n"
          "                                       exe_name\n"
          "\n");
 }
@@ -203,7 +204,7 @@ extract_sha(FILE* hexm_file, FILE* out_file, char buffer[100], InputParser* pars
 int
 extract_format(FILE* hexm_file, FILE* out_file, char buffer[100], InputParser* parser) {
   if (parser->requires_verbose && parser->requires_format)
-    printf("extract chariot format");
+    printf("extract chariot format\n");
   int len = fread(buffer, 1, strlen(":fmt:"), hexm_file);
   buffer[len] = '\0';
   if (strcmp(buffer, ":fmt:") != 0)
@@ -255,7 +256,7 @@ extract_additional_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "add") == 0) {
     if (parser->requires_verbose && parser->requires_additional)
-      printf("extract chariot additional file");
+      printf("extract chariot additional file\n");
     u_int32_t additional_size = 0;
     if (fread(&additional_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
@@ -323,7 +324,7 @@ extract_license_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "lic") == 0) {
     if (parser->requires_verbose && parser->requires_license)
-      printf("extract chariot license file");
+      printf("extract chariot license file\n");
     u_int32_t license_size = 0;
     if (fread(&license_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
@@ -360,7 +361,7 @@ extract_software_id_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "soft") == 0) {
     if (parser->requires_verbose && parser->requires_software_id)
-      printf("extract chariot software_id file");
+      printf("extract chariot software_id file\n");
     u_int32_t software_id_size = 0;
     if (fread(&software_id_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
@@ -397,7 +398,7 @@ extract_blockchain_path_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "bcpath") == 0) {
     if (parser->requires_verbose && parser->requires_blockchain_path)
-      printf("extract chariot blockchain path");
+      printf("extract chariot blockchain path\n");
     u_int32_t blockchain_size = 0;
     if (fread(&blockchain_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
@@ -434,7 +435,7 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "sca") == 0) {
     if (parser->requires_verbose && parser->requires_static_analysis)
-      printf("extract chariot static_analysis file");
+      printf("extract chariot static_analysis file\n");
     u_int32_t static_analysis_size = 0;
     if (fread(&static_analysis_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
