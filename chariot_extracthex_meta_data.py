@@ -73,22 +73,28 @@ def locate_line_from_end(hexm_file, file_size):
     raise OSError(1)
 
 def convert_hex_line(hexm_file, bytes_number : int) -> bytes:
-    line = (bytes_number // 0xff) if (bytes_number > 0) else 1
+    line = ((bytes_number+0xff-1) // 0xff) if (bytes_number > 0) else 1
     result = b''
     while line > 1:
         curline = hexm_file.readline()
-        if (curline[0:9] != b":FF000000"):
+        if (curline[0:9] != ":FF000000"):
             print ("original file " + args.exe_name + " has not expected hybrid format")
             raise OSError(1)
-        converted_line += binascii.unhexlify(curline[9:9+0x100*2])
+        converted_line = binascii.unhexlify(curline[9:9+0xff*2])
         result += converted_line
         checksum = 0
         for ch in converted_line:
-            checksum += ch
+            checksum = checksum + ch
+        checksum = (checksum +
+            int.from_bytes(binascii.unhexlify(curline[1:3]), byteorder='big') +
+            int.from_bytes(binascii.unhexlify(curline[3:5]), byteorder='big') +
+            int.from_bytes(binascii.unhexlify(curline[5:7]), byteorder='big') +
+            int.from_bytes(binascii.unhexlify(curline[7:9]), byteorder='big'))
         checksum = -checksum
-        if binascii.unhexlify(curline[9+0x100*2:9+0x100*2+2])[0] != checksum:
+        if binascii.unhexlify(curline[9+0xff*2:9+0xff*2+2])[0] != checksum & 0xff:
             print ("original file " + args.exe_name + " has not expected hybrid format")
             raise OSError(1)
+        line = line-1
     curline = hexm_file.readline()
     if (curline[0:1] != ":") or (curline[3:9] != "000000"):
         print ("original file " + args.exe_name + " has not expected hybrid format")
@@ -105,7 +111,8 @@ def convert_hex_line(hexm_file, bytes_number : int) -> bytes:
         int.from_bytes(binascii.unhexlify(curline[5:7]), byteorder='big') +
         int.from_bytes(binascii.unhexlify(curline[7:9]), byteorder='big'))
     checksum = -checksum
-    if binascii.unhexlify(curline[9+line_length*2:9+line_length*2+2])[0] != checksum & 0xff:
+    if (binascii.unhexlify(curline[9+line_length*2:9+line_length*2+2])[0]
+            != checksum & 0xff):
         print ("original file " + args.exe_name + " has not expected hybrid format")
         raise OSError(1)
     return result
@@ -173,7 +180,7 @@ try:
                 sha_256 = convert_hex_line(hexm_file, 256//8)
                 result = binascii.hexlify(sha_256).decode("ascii")
                 if output_file is not None:
-                    output_file.write(result.encode())
+                    output_file.write(result)
                 else:
                     print(result)
             else:
@@ -213,21 +220,20 @@ try:
             elif next_header == "add":
                 if args.verbose and (args.add is not None):
                     print ("extract chariot additional file")
-                additional_size = int.from_bytes(binascii.unhexlify(
-                    size_line_convert[index_ch+1:index_ch+5]), byteorder='big')
+                additional_size = int.from_bytes(
+                    line_convert[index_ch+1:index_ch+5], byteorder='big')
                 additional_string = convert_hex_line(hexm_file, additional_size)
                 if args.add:
                     if output_file is not None:
-                        output_file.write(additional_string)
+                        output_file.write(str(additional_string))
                     else:
                         print(additional_string)
 
                 line_convert = convert_hex_line(hexm_file, -1)
-                if line_convert[0] != ':':
+                if chr(line_convert[0]) != ':':
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
-                additional_mime_size = int.from_bytes(binascii.unhexlify(
-                    line_convert[1:5]), byteorder='big')
+                additional_mime_size = int.from_bytes(line_convert[1:5], byteorder='big')
                 additional_mime_string = convert_hex_line(hexm_file, additional_mime_size)
 
             if args.verbose and args.version:
@@ -253,7 +259,7 @@ try:
             size_line_convert = len(line_convert)
             while index_ch < size_line_convert and chr(line_convert[index_ch]) != ':':
                 next_header += chr(line_convert[index_ch])
-                ++index_ch
+                index_ch = index_ch + 1
             if index_ch >= size_line_convert:
                 print ("original file " + args.exe_name + " has not expected hybrid format")
                 raise OSError(1)
@@ -264,13 +270,13 @@ try:
             elif next_header == "bcpath":
                 if args.verbose and args.blockchain_path is not None:
                     print ("extract chariot blockchain path")
-                blockchain_size = int.from_bytes(binascii.unhexlify(
-                    size_line_convert[index_ch+1:index_ch+5]), byteorder='big')
+                blockchain_size = int.from_bytes(
+                    line_convert[index_ch+1:index_ch+5], byteorder='big')
                 blockchain_string = convert_hex_line(hexm_file, blockchain_size)
 
                 if args.blockchain_path:
                     if output_file is not None:
-                        output_file.write(blockchain_string)
+                        output_file.write(blockchain_string.decode())
                     else:
                         print(str(blockchain_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
@@ -282,7 +288,7 @@ try:
                 size_line_convert = len(line_convert)
                 while index_ch < size_line_convert and chr(line_convert[index_ch]) != ':':
                     next_header += chr(line_convert[index_ch])
-                    ++index_ch
+                    index_ch = index_ch + 1
                 if index_ch >= size_line_convert:
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
@@ -293,13 +299,13 @@ try:
             elif next_header == "lic":
                 if args.verbose and args.license is not None:
                     print ("extract chariot license path")
-                license_size = int.from_bytes(binascii.unhexlify(
-                    size_line_convert[index_ch+1:index_ch+5]), byteorder='big')
+                license_size = int.from_bytes(
+                    line_convert[index_ch+1:index_ch+5], byteorder='big')
                 license_string = convert_hex_line(hexm_file, license_size)
 
                 if args.license:
                     if output_file is not None:
-                        output_file.write(license_string)
+                        output_file.write(license_string.decode())
                     else:
                         print(str(license_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
@@ -311,7 +317,7 @@ try:
                 size_line_convert = len(line_convert)
                 while index_ch < size_line_convert and chr(line_convert[index_ch]) != ':':
                     next_header += chr(line_convert[index_ch])
-                    ++index_ch
+                    index_ch = index_ch + 1
                 if index_ch >= size_line_convert:
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
@@ -322,22 +328,22 @@ try:
             elif next_header == "sca":
                 if args.verbose and args.static_analysis is not None:
                     print ("extract chariot static_analysis path")
-                static_analysis_size = int.from_bytes(binascii.unhexlify(
-                    size_line_convert[index_ch+1:index_ch+5]), byteorder='big')
+                static_analysis_size = int.from_bytes(
+                    line_convert[index_ch+1:index_ch+5], byteorder='big')
                 static_analysis_string = convert_hex_line(hexm_file, static_analysis_size)
 
                 if args.static_analysis:
                     if output_file is not None:
-                        output_file.write(static_analysis_string)
+                        output_file.write(static_analysis_string.decode())
                     else:
                         print(str(static_analysis_string.decode()))
                 line_convert = convert_hex_line(hexm_file, -1)
-                if line_convert[0] != ':':
+                if chr(line_convert[0]) != ':':
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
 
-                static_analysis_mime_size = int.from_bytes(binascii.unhexlify(
-                    line_convert[1:5]), byteorder='big')
+                static_analysis_mime_size = int.from_bytes(
+                    line_convert[1:5], byteorder='big')
                 static_analysis_mime_string = convert_hex_line(hexm_file, static_analysis_mime_size)
 
 except OSError as err:
