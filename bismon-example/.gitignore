@@ -1,0 +1,11 @@
+*.o
+*.so
+*.orig
+*.su
+*chariot*.s
+*.c.[0-9]*t.*
+hello-world-*-kernel
+README.html
+*~
+_chariot-*-metadata.*
+_supplementary-data.c
