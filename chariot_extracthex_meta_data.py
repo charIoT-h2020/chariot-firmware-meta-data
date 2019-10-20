@@ -77,7 +77,7 @@ def convert_hex_line(hexm_file, bytes_number : int) -> bytes:
     result = b''
     while line > 1:
         curline = hexm_file.readline()
-        if (curline[0:9] != ":FF000000"):
+        if (curline[0:9] != ":ff000000"):
             print ("original file " + args.exe_name + " has not expected hybrid format")
             raise OSError(1)
         converted_line = binascii.unhexlify(curline[9:9+0xff*2])
@@ -333,7 +333,7 @@ try:
                 if output_file is None:
                     print("")
             elif next_header == "soft":
-                if args.verbose and args.software_id is not None:
+                if args.verbose and args.software_ID is not None:
                     print ("extract chariot blockchain path")
                 software_id_size = int.from_bytes(
                     line_convert[index_ch+1:index_ch+5], byteorder='big')
@@ -374,7 +374,7 @@ try:
                         output_file.write(static_analysis_string)
                         output_file.write(b'\n')
                     else:
-                        print(str(static_analysis_string.decode()))
+                        print(str(static_analysis_string))
                 line_convert = convert_hex_line(hexm_file, -1)
                 if chr(line_convert[0]) != ':':
                     print ("original file " + args.exe_name + " has not expected hybrid format")

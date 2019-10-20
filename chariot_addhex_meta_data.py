@@ -14,7 +14,7 @@ def convert_hex_line(content : bytes, add_line : int):
     result = ""
     while length > 0xff:
         checksum = 0xff
-        result += ":FF000000"
+        result += ":ff000000"
         subline = content[line*0xff:line*0xff+0xff]
         result += binascii.hexlify(subline).decode("ascii")
         for ch in subline:
@@ -258,7 +258,7 @@ try:
                 hexm_file.write(res)
                 with open(static_code_analysis_file,'rb') as add_file:
                     while True:
-                        buf=add_file.read(4096)
+                        buf=add_file.read(4080)
                         if buf:
                             res, add_line = convert_hex_line(buf, add_line)
                             hexm_file.write(res)
