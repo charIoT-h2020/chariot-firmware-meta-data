@@ -628,7 +628,7 @@ extract_version_from_field(FILE* hexm_file, FILE* out_file,
       parser)) != 0)
     return standard_error(out_file, hexm_file, parser);
 
-  bytes_number = 256/8;
+  bytes_number = 20;
   *len = 0; *checksum = 0;
   does_start_line = true;
   if ((error_code = convert_hex_line(hexm_file, out_file, &bytes_number,
@@ -636,14 +636,14 @@ extract_version_from_field(FILE* hexm_file, FILE* out_file,
       parser)) != 0)
     return standard_error(out_file, hexm_file, parser);
   if (parser->requires_version) {
-    for (int i = 256/8-1; i >= 0; --i) {
+    for (int i = 20-1; i >= 0; --i) {
       int val = field_buffer[i] & 0xf;
       field_buffer[2*i+1] = (val >= 10) ? (char) (val-10+'a') : (char) (val+'0');
       val = (field_buffer[i] >> 4) & 0xf;
       field_buffer[2*i] = (val >= 10) ? (char) (val-10+'a') : (char) (val+'0');
     }
-    field_buffer[256/4] = '\n',
-    fwrite(field_buffer, 1, 256/4+1, out_file);
+    field_buffer[40] = '\n',
+    fwrite(field_buffer, 1, 40+1, out_file);
   }
   return 0;
 }

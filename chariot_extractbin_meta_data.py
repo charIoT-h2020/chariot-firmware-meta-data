@@ -123,7 +123,7 @@ try:
                 if hexm_file.read(len(":version:")) != b":version:":
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
-            version_string = hexm_file.read(int(256/8))
+            version_string = hexm_file.read(int(20))
             if args.version:
                 result = binascii.hexlify(version_string).decode("ascii")
                 if output_file is not None:
