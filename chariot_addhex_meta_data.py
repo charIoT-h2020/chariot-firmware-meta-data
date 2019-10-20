@@ -54,18 +54,18 @@ def compute_sha_256(in_file_name, verbose):
 
 def compute_git_version(in_file_name, verbose):
     git_log_proc = subprocess.Popen(
-            ['git', 'log', '--format=oneline', '--abbrev=12', '--abbrev-commit', '-q',
+            ['git', 'log', '--format=oneline', '--abbrev=40', '--abbrev-commit', '-q',
                 in_file_name], stdout=subprocess.PIPE)
     git_version_result = git_log_proc.stdout.read().decode("utf-8").partition(' ')[0]
     returncode = git_log_proc.wait()
     if verbose or returncode or (len(git_version_result) == 0):
-        command = "git log --format=oneline --abbrev=12 --abbrev-commit -q " + in_file_name + ""
+        command = "git log --format=oneline --abbrev=40 --abbrev-commit -q " + in_file_name + ""
         if returncode or (len(git_version_result) == 0):
             if returncode:
                 print ("[warning] the command " + command + " has failed with return code " + str(returncode))
             elif verbose:
                 print ("[warning] the command " + command + " has not returned any result")
-            git_version_result = "0000000000000000000000000000000000000000000000000000000000000000"
+            git_version_result = "0000000000000000000000000000000000000000"
         else:
             print (command)
     return bytes.fromhex(git_version_result)

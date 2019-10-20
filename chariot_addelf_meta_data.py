@@ -48,15 +48,15 @@ def compute_sha_256_content(elf_name, mainboot, verbose):
 
 def compute_git_version(in_file_name, verbose):
     git_log_proc = subprocess.Popen(
-            ['git', 'log', '--format=oneline', '--abbrev=12', '--abbrev-commit', '-q',
+            ['git', 'log', '--format=oneline', '--abbrev=40', '--abbrev-commit', '-q',
                 in_file_name], stdout=subprocess.PIPE)
     git_version_result = git_log_proc.stdout.read().partition(' ')[0]
     returncode = git_log_proc.wait()
     if verbose or returncode:
-        command = "git log --format=oneline --abbrev=12 --abbrev-commit -q " + in_file_name + ""
+        command = "git log --format=oneline --abbrev=40 --abbrev-commit -q " + in_file_name + ""
         if returncode:
             print ("[warning] the command " + command + " has failed with return code " + str(returncode))
-            git_version_result = "0000000000000000000000000000000000000000000000000000000000000000"
+            git_version_result = "0000000000000000000000000000000000000000"
         else:
             print (command)
     return git_version_result
