@@ -86,6 +86,8 @@ parser.add_argument('--software_ID', '-soft', nargs=1,
                    help='the software_id of the firmware')
 parser.add_argument('--static-analysis', '-sa', nargs=2,
                    help='result of the static analysis as file/format')
+parser.add_argument('--sha', '-sha', nargs=1,
+                   help='if provided, replace the computation of sha256')
 parser.add_argument('--output', '-o', nargs=1, required=True,
                    help='output file if different from the original file')
 args = parser.parse_args()
@@ -119,6 +121,11 @@ if args.software_ID is not None:
     software_id = args.software_ID[0]
 else:
     software_id = None
+
+if args.sha is not None:
+    sha_provided = args.sha[0]
+else:
+    sha_provided = None
 
 output_file = args.output[0]
 
@@ -165,8 +172,12 @@ try:
                 print ("generate sha256 of " + args.hex_name)
             res, add_line = convert_hex_line(":sha256:".encode(), add_line)
             hexm_file.write(res)
-            res, add_line = convert_hex_line(
-                compute_sha_256(args.hex_name, args.verbose), add_line)
+            if sha_provided is None:
+                res, add_line = convert_hex_line(
+                    compute_sha_256(args.hex_name, args.verbose), add_line)
+            else:
+                res, add_line = convert_hex_line(
+                    bytes.fromhex(sha_provided), add_line)
             hexm_file.write(res)
             if args.verbose:
                 print ("generate chariot format")

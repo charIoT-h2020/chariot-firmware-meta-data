@@ -47,8 +47,8 @@ def compute_git_version(in_file_name, verbose):
             print (command)
     return bytes.fromhex(git_version_result)
 
-parser = argparse.ArgumentParser(description='Add Chariot meta-data into an hex firmware')
-parser.add_argument('hex_name', help='the name of the executable hex file')
+parser = argparse.ArgumentParser(description='Add Chariot meta-data into a binary firmware')
+parser.add_argument('bin_name', help='the name of the executable binary file')
 parser.add_argument('--all', '-all', nargs=1,
                    help='meta-data file')
 parser.add_argument('--add', '-add', nargs=2,
@@ -63,6 +63,8 @@ parser.add_argument('--software_ID', '-soft', nargs=1,
                    help='the software_id of the firmware')
 parser.add_argument('--static-analysis', '-sa', nargs=2,
                    help='result of the static analysis as file/format')
+parser.add_argument('--sha', '-sha', nargs=1,
+                   help='if provided, replace the computation of sha256')
 parser.add_argument('--output', '-o', nargs=1, required=True,
                    help='output file if different from the original file')
 args = parser.parse_args()
@@ -97,14 +99,19 @@ if args.software_ID is not None:
 else:
     soft_id = None
 
+if args.sha is not None:
+    sha_provided = args.sha[0]
+else:
+    sha_provided = None
+
 output_file = args.output[0]
 
-print ("add meta-data in hexm file")
+print ("add meta-data in binm file")
 try:
     total_size = 0
-    with open(args.hex_name,'rb') as hex_file, open(output_file,'wb') as hexm_file:
+    with open(args.bin_name,'rb') as hex_file, open(output_file,'wb') as hexm_file:
         if args.verbose:
-            print ("copy hex file " + args.hex_name) 
+            print ("copy binary file " + args.bin_name) 
         while True:
             buf=hex_file.read(4096)
             if buf: 
@@ -131,10 +138,13 @@ try:
             hexm_file.write(":chariot_md:".encode())
             add_size += len(":chariot_md:")
             if args.verbose:
-                print ("generate sha256 of " + args.hex_name)
+                print ("generate sha256 of " + args.bin_name)
             hexm_file.write(":sha256:".encode())
             add_size += len(":sha256:")
-            hexm_file.write(compute_sha_256(args.hex_name, args.verbose))
+            if sha_provided is None:
+                hexm_file.write(compute_sha_256(args.bin_name, args.verbose))
+            else:
+                hexm_file.write(bytes.fromhex(sha_provided))
             add_size += int(256/8)
             if args.verbose:
                 print ("generate chariot format")
@@ -174,10 +184,10 @@ try:
                 add_size += len(additional_data_mime)
 
             if args.verbose:
-                print ("generate version of " + args.hex_name)
+                print ("generate version of " + args.bin_name)
             hexm_file.write(":version:".encode())
             add_size += len(":version:")
-            hexm_file.write(compute_git_version(args.hex_name, args.verbose))
+            hexm_file.write(compute_git_version(args.bin_name, args.verbose))
             add_size += int(256/8)
 
             if blockchain_path is not None:
