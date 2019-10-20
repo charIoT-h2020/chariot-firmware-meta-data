@@ -25,8 +25,8 @@ parser.add_argument('--license', '-lic', action='store_true',
                    help='print the license of the firmware')
 parser.add_argument('--software_ID', '-soft', action='store_true',
                    help='print the software id of the firmware')
-parser.add_argument('--static-analysis', '-sa', action='store_true',
-                   help='print the result of the static analysis as file/format')
+parser.add_argument('--static-analysis', '-sa', nargs=1,
+                   help='print the result of the static analysis in file')
 parser.add_argument('--add', '-add', action='store_true',
                    help='print content of the additional section')
 parser.add_argument('--output', '-o', nargs=1,
@@ -227,7 +227,10 @@ try:
                 static_analysis_size = int.from_bytes(hexm_file.read(4), byteorder='big')
                 static_analysis_string = hexm_file.read(static_analysis_size)
                 if args.static_analysis:
-                    if output_file is not None:
+                    if args.static_analysis[0] is not None:
+                        with open(args.static_analysis[0],'wb') as static_file:
+                            static_file.write(static_analysis_string)
+                    elif output_file is not None:
                         output_file.write(static_analysis_string)
                     else:
                         print(static_analysis_string)

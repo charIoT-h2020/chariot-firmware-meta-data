@@ -16,11 +16,11 @@ typedef struct _InputParser {
   bool requires_blockchain_path : 1;
   bool requires_license : 1;
   bool requires_software_id : 1;
-  bool requires_static_analysis : 1;
   bool requires_additional : 1;
   bool requires_cut : 1;
   const char* output_file;
   const char* output_exe_file;
+  const char* static_analysis_file;
 } InputParser;
 
 int
@@ -310,7 +310,7 @@ input_parser_usage()
 {
   printf("usage: chariot_extracthex_meta_data [-h] [--all] [--verbose] [--sha]\n"
          "                                    [--blockchain_path] [--license]\n"
-         "                                    [--static-analysis] [--add]\n"
+         "                                    [--static-analysis FILE] [--add]\n"
          "                                    [--format] [--output OUTPUT]\n"
          "                                    [--cut OUTPUT_HEX]\n"
          "                                    hex_name\n"
@@ -346,7 +346,11 @@ fill_input_parser_fields(InputParser* parser, int argc, const char** argv)
       else if (strcmp(argv[i], "-soft") == 0 || strcmp(argv[i], "--software_ID") == 0)
         parser->requires_software_id = true;
       else if (strcmp(argv[i], "-sa") == 0 || strcmp(argv[i], "--static-analysis") == 0)
-        parser->requires_static_analysis = true;
+      {
+        if (++i >= argc)
+          return false;
+        parser->static_analysis_file = argv[i];
+      }
       else if (strcmp(argv[i], "-add") == 0 || strcmp(argv[i], "--add") == 0)
         parser->requires_additional = true;
       else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0)
@@ -791,7 +795,10 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[512], int* len_field, int* len, int* checksum,
     InputParser* parser) {
   if (strcmp(field_buffer, ":sca:") == 0) {
-    if (parser->requires_verbose && parser->requires_static_analysis)
+    FILE* static_file = NULL;
+    if (parser->static_analysis_file)
+      static_file = fopen(parser->static_analysis_file, "wb");
+    if (parser->requires_verbose && parser->static_analysis_file)
       printf("extract chariot static analysis results\n");
     if (*len != 4)
       return standard_error(out_file, hexm_file, parser);
@@ -815,10 +822,12 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
             field_buffer, NULL /* &len_header */, &does_start_line, len, checksum,
             parser)) != 0)
           return standard_error(out_file, hexm_file, parser);
-        if (parser->requires_static_analysis)
+        if (static_file)
+          fwrite(field_buffer, 1, nb_bytes - bytes_number, static_file);
+        else if (parser->static_analysis_file)
           fwrite(field_buffer, 1, nb_bytes - bytes_number, out_file);
       } while (!does_start_line || bytes_number > 0);
-      if (parser->requires_static_analysis)
+      if (parser->static_analysis_file)
         fputc('\n', out_file);
     }
     bytes_number = 5;
@@ -827,6 +836,8 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
         &bytes_number, field_buffer, NULL, &does_start_line, len,
         checksum, parser)) != 0)
       return standard_error(out_file, hexm_file, parser);
+    if (static_file)
+      fclose(static_file);
     if (field_buffer[0] != ':')
       return standard_error(out_file, hexm_file, parser);
     u_int32_t static_analysis_mime_size = 0;
@@ -843,7 +854,7 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
       } while (!does_start_line || bytes_number > 0);
     }
   }
-  else if (parser->requires_static_analysis) {
+  else if (parser->static_analysis_file) {
     if (out_file == stdout)
       putchar('\n');
   }
@@ -876,8 +887,8 @@ int main(int argc, const char** argv) {
            "  --blockchain_path, -bp\n"
            "                        print the path to the targeted blockchain\n"
            "  --license, -lic       print the license of the firmware\n"
-           "  --static-analysis, -sa\n"
-           "                        print the result of the static analysis as file/format\n"
+           "  --static-analysis, -sa FILE\n"
+           "                        print the result of the static analysis in file\n"
            "  --add, -add           print content of the additional section\n"
            "  --output OUTPUT, -o OUTPUT\n"
            "                        print into the output file instead of stdout\n"

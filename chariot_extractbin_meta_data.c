@@ -16,11 +16,11 @@ typedef struct _InputParser {
   bool requires_blockchain_path : 1;
   bool requires_license : 1;
   bool requires_software_id : 1;
-  bool requires_static_analysis : 1;
   bool requires_additional : 1;
   bool requires_cut : 1;
   const char* output_file;
   const char* output_exe_file;
+  const char* static_analysis_file;
 } InputParser;
 
 int
@@ -50,7 +50,7 @@ input_parser_usage()
   printf("usage: chariot_extractbin_meta_data.py [-h] [--all] [--verbose] [--sha]\n"
          "                                       [--format] [--version]\n"
          "                                       [--blockchain_path] [--license]\n"
-         "                                       [--software_ID] [--static-analysis]\n"
+         "                                       [--software_ID] [--static-analysis FILE]\n"
          "                                       [--add] [--output OUTPUT]\n"
          "                                       [--cut OUTPUT_BIN]\n"
          "                                       exe_name\n"
@@ -84,7 +84,11 @@ fill_input_parser_fields(InputParser* parser, int argc, const char** argv)
       else if (strcmp(argv[i], "-soft") == 0 || strcmp(argv[i], "--software_ID") == 0)
         parser->requires_software_id = true;
       else if (strcmp(argv[i], "-sa") == 0 || strcmp(argv[i], "--static-analysis") == 0)
-        parser->requires_static_analysis = true;
+      {
+        if (++i >= argc)
+          return false;
+        parser->static_analysis_file = argv[i];
+      }
       else if (strcmp(argv[i], "-add") == 0 || strcmp(argv[i], "--add") == 0)
         parser->requires_additional = true;
       else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0)
@@ -434,20 +438,25 @@ int
 extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
     char field_buffer[100], int* len_field, InputParser* parser) {
   if (strcmp(field_buffer, "sca") == 0) {
-    if (parser->requires_verbose && parser->requires_static_analysis)
+    FILE* static_file = NULL;
+    if (parser->static_analysis_file)
+      static_file = fopen(parser->static_analysis_file, "wb");
+    if (parser->requires_verbose && parser->static_analysis_file)
       printf("extract chariot static_analysis file\n");
     u_int32_t static_analysis_size = 0;
     if (fread(&static_analysis_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&static_analysis_size);
-    if (parser->requires_static_analysis)
+    if (parser->static_analysis_file)
     { char buffer[4096];
       do {
         u_int32_t size = static_analysis_size > 4096 ? 4096 : static_analysis_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
-        if (parser->requires_static_analysis)
+        if (static_file)
+          fwrite(buffer, 1, size, static_file);
+        else if (parser->static_analysis_file)
           fwrite(buffer, 1, size, out_file);
         static_analysis_size -= size;
       } while (static_analysis_size > 0);
@@ -455,6 +464,8 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
     }
     else if (fseek(hexm_file, static_analysis_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
+    if (static_file)
+      fclose(static_file);
     if (fgetc(hexm_file) != ':')
       return standard_error(out_file, hexm_file, parser);
     u_int32_t static_analysis_mime_size = 0;
@@ -464,7 +475,7 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
     if (fseek(hexm_file, static_analysis_mime_size, SEEK_CUR))
       return standard_error(out_file, hexm_file, parser);
   }
-  else if (parser->requires_static_analysis) {
+  else if (parser->static_analysis_file) {
     if (out_file == stdout)
       putchar('\n');
   }
@@ -498,8 +509,8 @@ int main(int argc, const char** argv) {
            "                        print the path to the targeted blockchain\n"
            "  --license, -lic       print the license of the firmware\n"
            "  --software_ID, -soft  print the software id of the firmware\n"
-           "  --static-analysis, -sa\n"
-           "                        print the result of the static analysis as file/format\n"
+           "  --static-analysis, -sa FILE\n"
+           "                        print the result of the static analysis in file\n"
            "  --add, -add           print content of the additional section\n"
            "  --output OUTPUT, -o OUTPUT\n"
            "                        print into the output file instead of stdout\n"
