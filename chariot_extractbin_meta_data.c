@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <stdint.h>
 
 typedef struct _InputParser {
   const char* exe_name;
@@ -32,10 +33,10 @@ standard_error(FILE* out_file, FILE* hexm_file, InputParser* parser) {
 }
 
 void
-ensure_endianness(u_int32_t* value) {
+ensure_endianness(uint32_t* value) {
   int hostEndianness = 0x1234;
   if (*(char*)(&hostEndianness) == 0x34) { // little endian
-    u_int32_t res = 0;
+    uint32_t res = 0;
     res |= (*value & 0xff) << 24;
     res |= ((*value >> 8) & 0xff) << 16;
     res |= ((*value >> 16) & 0xff) << 8;
@@ -213,13 +214,13 @@ extract_format(FILE* hexm_file, FILE* out_file, char buffer[100], InputParser* p
   buffer[len] = '\0';
   if (strcmp(buffer, ":fmt:") != 0)
     return standard_error(out_file, hexm_file, parser);
-  u_int32_t fmt_size = 0;
+  uint32_t fmt_size = 0;
   if (fread(&fmt_size, 1, 4, hexm_file) != 4)
     return standard_error(out_file, hexm_file, parser);
   ensure_endianness(&fmt_size);
   { char buffer[4096];
     do {
-      u_int32_t size = fmt_size > 4096 ? 4096 : fmt_size;
+      uint32_t size = fmt_size > 4096 ? 4096 : fmt_size;
       len = fread(buffer, 1, size, hexm_file);
       if (len != size)
         return standard_error(out_file, hexm_file, parser);
@@ -261,14 +262,14 @@ extract_additional_from_field(FILE* hexm_file, FILE* out_file,
   if (strcmp(field_buffer, "add") == 0) {
     if (parser->requires_verbose && parser->requires_additional)
       printf("extract chariot additional file\n");
-    u_int32_t additional_size = 0;
+    uint32_t additional_size = 0;
     if (fread(&additional_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&additional_size);
     if (parser->requires_additional)
     { char buffer[4096];
       do {
-        u_int32_t size = additional_size > 4096 ? 4096 : additional_size;
+        uint32_t size = additional_size > 4096 ? 4096 : additional_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
@@ -282,7 +283,7 @@ extract_additional_from_field(FILE* hexm_file, FILE* out_file,
       return standard_error(out_file, hexm_file, parser);
     if (fgetc(hexm_file) != ':')
       return standard_error(out_file, hexm_file, parser);
-    u_int32_t additional_mime_size = 0;
+    uint32_t additional_mime_size = 0;
     if (fread(&additional_mime_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&additional_mime_size);
@@ -307,18 +308,18 @@ extract_version_from_field(FILE* hexm_file, FILE* out_file,
     return standard_error(out_file, hexm_file, parser);
   if (parser->requires_version && parser->requires_verbose)
     printf("extract chariot version\n");
-  int len = fread(field_buffer, 1, 20, hexm_file);
-  if (len != 20)
+  int len = fread(field_buffer, 1, 32, hexm_file);
+  if (len != 32)
     return standard_error(out_file, hexm_file, parser);
   if (parser->requires_version) {
-    for (int i = 20-1; i >= 0; --i) {
+    for (int i = 32-1; i >= 0; --i) {
       int val = field_buffer[i] & 0xf;
       field_buffer[2*i+1] = (val >= 10) ? (char) (val-10+'a') : (char) (val+'0');
       val = (field_buffer[i] >> 4) & 0xf;
       field_buffer[2*i] = (val >= 10) ? (char) (val-10+'a') : (char) (val+'0');
     }
-    field_buffer[40] = '\n',
-    fwrite(field_buffer, 1, 40+1, out_file);
+    field_buffer[64] = '\n',
+    fwrite(field_buffer, 1, 64+1, out_file);
   }
   return 0;
 }
@@ -329,14 +330,14 @@ extract_license_from_field(FILE* hexm_file, FILE* out_file,
   if (strcmp(field_buffer, "lic") == 0) {
     if (parser->requires_verbose && parser->requires_license)
       printf("extract chariot license file\n");
-    u_int32_t license_size = 0;
+    uint32_t license_size = 0;
     if (fread(&license_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&license_size);
     if (parser->requires_license)
     { char buffer[4096];
       do {
-        u_int32_t size = license_size > 4096 ? 4096 : license_size;
+        uint32_t size = license_size > 4096 ? 4096 : license_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
@@ -366,14 +367,14 @@ extract_software_id_from_field(FILE* hexm_file, FILE* out_file,
   if (strcmp(field_buffer, "soft") == 0) {
     if (parser->requires_verbose && parser->requires_software_id)
       printf("extract chariot software_id file\n");
-    u_int32_t software_id_size = 0;
+    uint32_t software_id_size = 0;
     if (fread(&software_id_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&software_id_size);
     if (parser->requires_software_id)
     { char buffer[4096];
       do {
-        u_int32_t size = software_id_size > 4096 ? 4096 : software_id_size;
+        uint32_t size = software_id_size > 4096 ? 4096 : software_id_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
@@ -403,14 +404,14 @@ extract_blockchain_path_from_field(FILE* hexm_file, FILE* out_file,
   if (strcmp(field_buffer, "bcpath") == 0) {
     if (parser->requires_verbose && parser->requires_blockchain_path)
       printf("extract chariot blockchain path\n");
-    u_int32_t blockchain_size = 0;
+    uint32_t blockchain_size = 0;
     if (fread(&blockchain_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&blockchain_size);
     if (parser->requires_blockchain_path)
     { char buffer[4096];
       do {
-        u_int32_t size = blockchain_size > 4096 ? 4096 : blockchain_size;
+        uint32_t size = blockchain_size > 4096 ? 4096 : blockchain_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
@@ -443,14 +444,14 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
       static_file = fopen(parser->static_analysis_file, "wb");
     if (parser->requires_verbose && parser->static_analysis_file)
       printf("extract chariot static_analysis file\n");
-    u_int32_t static_analysis_size = 0;
+    uint32_t static_analysis_size = 0;
     if (fread(&static_analysis_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&static_analysis_size);
     if (parser->static_analysis_file)
     { char buffer[4096];
       do {
-        u_int32_t size = static_analysis_size > 4096 ? 4096 : static_analysis_size;
+        uint32_t size = static_analysis_size > 4096 ? 4096 : static_analysis_size;
         size_t len = fread(buffer, 1, size, hexm_file);
         if (len != size)
           return standard_error(out_file, hexm_file, parser);
@@ -468,7 +469,7 @@ extract_static_analysis_from_field(FILE* hexm_file, FILE* out_file,
       fclose(static_file);
     if (fgetc(hexm_file) != ':')
       return standard_error(out_file, hexm_file, parser);
-    u_int32_t static_analysis_mime_size = 0;
+    uint32_t static_analysis_mime_size = 0;
     if (fread(&static_analysis_mime_size, 1, 4, hexm_file) != 4)
       return standard_error(out_file, hexm_file, parser);
     ensure_endianness(&static_analysis_mime_size);
@@ -534,7 +535,7 @@ int main(int argc, const char** argv) {
     fprintf(stderr, "Cannot open file %s\n", parser.exe_name);
     return 1;
   }
-  u_int32_t metadata_size = 0;
+  uint32_t metadata_size = 0;
   if (fseek(hexm_file, -4, SEEK_END)) {
     printf("unable to find metadata, error code = %d\n", errno);
     return 1;

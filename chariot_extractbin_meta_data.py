@@ -38,7 +38,7 @@ if args.output is not None:
 else:
     output_file = None
 
-print ("extract meta-data from hexm file")
+print ("extract meta-data from binm file")
 try:
     with open(args.exe_name,'rb') as hexm_file:
         hexm_file.seek(-4, os.SEEK_END)
@@ -123,7 +123,7 @@ try:
                 if hexm_file.read(len(":version:")) != b":version:":
                     print ("original file " + args.exe_name + " has not expected hybrid format")
                     raise OSError(1)
-            version_string = hexm_file.read(int(20))
+            version_string = hexm_file.read(int(32))
             if args.version:
                 result = binascii.hexlify(version_string).decode("ascii")
                 if output_file is not None:

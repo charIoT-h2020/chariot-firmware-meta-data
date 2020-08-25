@@ -42,9 +42,11 @@ def compute_git_version(in_file_name, verbose):
                 print ("[warning] the command " + command + " has failed with return code " + str(returncode))
             elif verbose:
                 print ("[warning] the command " + command + " has not returned any result")
-            git_version_result = "0000000000000000000000000000000000000000"
+            git_version_result = "0000000000000000000000000000000000000000000000000000000000000000"
         else:
             print (command)
+    if (len(git_version_result) == 40):
+        git_version_result += "000000000000000000000000"
     return bytes.fromhex(git_version_result)
 
 parser = argparse.ArgumentParser(description='Add Chariot meta-data into a binary firmware')
@@ -188,7 +190,7 @@ try:
             hexm_file.write(":version:".encode())
             add_size += len(":version:")
             hexm_file.write(compute_git_version(args.bin_name, args.verbose))
-            add_size += int(20)
+            add_size += int(32)
 
             if blockchain_path is not None:
                 if args.verbose:
