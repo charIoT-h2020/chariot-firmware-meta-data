@@ -21,7 +21,7 @@ def close_fd_and_file(*args, **kwargs):
 
 def compute_sha_256(in_file_name, verbose):
     sha_256_proc = subprocess.Popen(['sha256sum', in_file_name], stdout=subprocess.PIPE)
-    sha_result = sha_256_proc.stdout.read().partition(' ')[0]
+    sha_result = sha_256_proc.stdout.read().decode().partition(' ')[0]
     returncode = sha_256_proc.wait()
     if verbose or returncode:
         command = "sha256sum " + in_file_name
@@ -48,15 +48,15 @@ def compute_sha_256_content(elf_name, mainboot, verbose):
 
 def compute_git_version(in_file_name, verbose):
     git_log_proc = subprocess.Popen(
-            ['git', 'log', '--format=oneline', '--abbrev=40', '--abbrev-commit', '-q',
+            ['git', 'log', '--format=oneline', '--abbrev=64', '--abbrev-commit', '-q',
                 in_file_name], stdout=subprocess.PIPE)
-    git_version_result = git_log_proc.stdout.read().partition(' ')[0]
+    git_version_result = git_log_proc.stdout.read().decode().partition(' ')[0]
     returncode = git_log_proc.wait()
     if verbose or returncode:
         command = "git log --format=oneline --abbrev=40 --abbrev-commit -q " + in_file_name + ""
         if returncode:
             print ("[warning] the command " + command + " has failed with return code " + str(returncode))
-            git_version_result = "0000000000000000000000000000000000000000"
+            git_version_result = "0000000000000000000000000000000000000000000000000000000000000000"
         else:
             print (command)
     return git_version_result
@@ -192,10 +192,10 @@ def extract_info(output_file, section):
     size_proc = subprocess.Popen(['size', '-A', '-d', output_file], stdout=subprocess.PIPE)
     partition = None
     while True:
-        line = size_proc.stdout.readline()
-        if line == '':
+        line = size_proc.stdout.readline().decode()
+        if len(line) == 0:
             break
-        if line[0] == '.' and line[1:len(section)+1] == section:
+        if len(line) > len(section) and line[0] == '.' and line[1:len(section)+1] == section:
             partition = line.split()
             break
     returncode = size_proc.wait()
@@ -227,10 +227,10 @@ def has_section(output_file, section):
     size_proc = subprocess.Popen(['size', '-A', output_file], stdout=subprocess.PIPE)
     result = False
     while not result:
-        line = size_proc.stdout.readline()
-        if line == '':
+        line = size_proc.stdout.readline().decode()
+        if len(line) == 0:
             break
-        if line[0] == '.' and line[1:len(section)+1] == section:
+        if len(line) > len(section) and line[0] == '.' and line[1:len(section)+1] == section:
             result = True
     returncode = size_proc.wait()
     if args.verbose or returncode:
